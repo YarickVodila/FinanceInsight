@@ -2,3 +2,4 @@ preprocessing
 api_keys
 dataset
 *__pycache__
+create_rag_pipeline.ipynb
