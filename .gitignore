@@ -3,5 +3,9 @@ api_keys
 dataset
 *__pycache__
 create_rag_pipeline.ipynb
+.venv
+__pycache__/
+.python-version
+data/*
 .env
-*.csv
+

@@ -21,7 +21,8 @@ from langgraph.checkpoint.memory import MemorySaver
 
 from .deposit_parser import parse_deposits
 
-FAISS_DB = "D:\programming\ITMO\IntroLLM\FinanceInsight\dataset\index_finance_insight"
+
+FAISS_DB = "./data/index"
 
 EMBEDDING_MODEL_NAME = 'intfloat/multilingual-e5-small'
 
