@@ -177,7 +177,19 @@ class FinanceMultiAgentRAG:
         
 
     def __create_graph(self):
+        """
+        Эта функция создает состоянийный граф для системы RAG. Граф используется для управления потоком данных
+        и выполнения различных инструментов и узлов.
 
+        Параметры:
+        Нет
+
+        Возвращает:
+        graph (StateGraph): Созданный состоянийный граф для системы RAG.
+
+        Строка документации также содержит описание каждого из важных частей кода, включая его назначение, параметры,
+        возвращаемые значения и другую важную информацию.
+        """
         graph_builder = StateGraph(MessagesState)
 
         graph_builder.add_node("Supervisor", self.query_or_respond)
@@ -205,10 +217,20 @@ class FinanceMultiAgentRAG:
 
         return graph
 
-    def get_response(self, input_message: str) -> str:
-        # try:
 
-            
+
+    def get_response(self, input_message: str) -> str:
+        """
+        Метод get_response отвечает за обработку входящего сообщения пользователя и генерацию ответа.
+        Он вызывает метод invoke графа с входящим сообщением и возвращает содержимое последнего сообщения в выходных данных.
+
+        Параметры:
+        input_message (str): Входное сообщение пользователя.
+
+        Возвращает:
+        str: Содержимое последнего сообщения в выходных данных, которое является сгенерированным ответом.
+        """
+        # try:
         #     # print(output)
         # except Exception as e:
         #     return f"Произошла ошибка: {e}"
@@ -219,21 +241,27 @@ class FinanceMultiAgentRAG:
                 ]
             }
         )
-        
+
         return output["messages"][-1].content
 
 
+
+
     def route_by_state(self, state: str) -> Literal["retrieve_tool", "deposit_tool", "news_tool", '__end__']:
-        """Определение узла по состоянию"""
+        """Определение узла графа в зависимости от текущего состояния.
 
+        Определяет, какой инструмент (tool) следует вызвать на основе последнего вызова инструмента в сообщении состояния.
+        Если последний вызов инструмента был для поиска информации (retrieve), возвращает 'retrieve_tool'.
+        Если последний вызов инструмента был для получения информации о вкладах (deposits), возвращает 'deposit_tool'.
+        Если последний вызов инструмента был для получения последних новостей (get_news), возвращает 'news_tool'.
+        Если последний вызов инструмента не был одним из вышеупомянутых, возвращает '__end__'.
 
-        # """
-        # Определение узла по состоянию
-        
-        # Args:
-        #     state (AIMessage): ответ агента
+        Args:
+            state (str): Состояние графа, представленное в виде строки.
 
-        # """
+        Returns:
+            Literal["retrieve_tool", "deposit_tool", "news_tool", '__end__']: Имя узла графа, к которому следует перейти.
+        """
 
         try:
             if state["messages"][-1].tool_calls[-1]["name"] == "retrieve":
@@ -249,14 +277,18 @@ class FinanceMultiAgentRAG:
         
     
     def query_or_respond(self, state: MessagesState):
-        """Вызов tool функций"""
-        # """
-        # Вызов tool функций
+        """
+        Вызов tool-функций
 
-        # Args:
-        #     state (MessagesState): состояние агента 
-        
-        # """
+        Метод `query_or_respond` отвечает за вызов инструментов (tool-функций) в зависимости от текущего состояния.
+        Он использует LLM-супервизора (`self.llm_supervisor`) для инвокации и получения ответа на основе последних сообщений в состоянии.
+
+        Args:
+            state (MessagesState): текущее состояние агента, представленное в виде объекта `MessagesState`.
+
+        Returns:
+            dict: словарь, содержащий ответ в виде последнего сообщения в формате `HumanMessage`.
+        """
 
         response = self.llm_supervisor.invoke(state["messages"])
         return {"messages": [response]}
@@ -264,9 +296,20 @@ class FinanceMultiAgentRAG:
 
 
     def generate(self, state: MessagesState):
-        """Ответь на вопрос по контексту"""
+        """
+        Генерация ответа на основе предоставленного контекста.
 
-        # Get generated ToolMessages
+        Метод `generate` отвечает за создание ответа на основе информации, полученной из инструментов (tool-функций), вызванных в текущем состоянии.
+        Он использует LLM-генератор (`self.llm_generator`) для инвокации и получения ответа на основе системного сообщения и предыдущих сообщений.
+
+        Args:
+            state (MessagesState): текущее состояние агента, представленное в виде объекта `MessagesState`.
+
+        Returns:
+            dict: словарь, содержащий ответ в виде последнего сообщения в формате `HumanMessage`.
+        """
+
+        # Получение сгенерированных сообщений инструментов
         recent_tool_messages = []
         
         for message in reversed(state["messages"]):
@@ -292,7 +335,7 @@ class FinanceMultiAgentRAG:
         conversation_messages = [message for message in state["messages"] if message.type in ("human", "system") or (message.type == "ai" and not message.tool_calls)]
         prompt = [SystemMessage(system_message_content)] + conversation_messages
 
-        # Run
+        # Запуск LLM-генератора
         response = self.llm_generator.invoke(prompt)
         return {"messages": [response]}
 
